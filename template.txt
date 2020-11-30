@@ -1,17 +1,17 @@
-# Robocopy Documentation
-# https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/robocopy
-# Explanation of Flags
-# /E 			 Copies subdirectories.  This option automatically includes empty directories.
-# /W:<n>		 Specifies the wait time between retries, in seconds. The default value of n is 30 (wait time 30 seconds).
-# /R:<n>		 Specifies the number of retries on failed copies. The default value of n is 1,000,000 (one million retries).
-# /copy:dat		 Sepcifies which file properties to copy. D = Data, A = Attributes, T = Time stamps. More in documentation.
-# /XO			 Excludes older files.
-# /dcopy:t		 Depcifies what to copy in directories.  T = Time stamps. More in documentation.
-# /log:<logfile> Writes the status output to the log file (overwrites the existing log file).
-# /nfl			 Specifies that file names are not to be logged.
-# /ndl			 Specifies that directory names are not to be logged.		  	 
+:: Robocopy Documentation
+:: https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/robocopy
+:: Explanation of Flags
+:: /E 			 Copies subdirectories.  This option automatically includes empty directories.
+:: /W:<n>		 Specifies the wait time between retries, in seconds. The default value of n is 30 (wait time 30 seconds).
+:: /R:<n>		 Specifies the number of retries on failed copies. The default value of n is 1,000,000 (one million retries).
+:: /copy:dat		 Sepcifies which file properties to copy. D = Data, A = Attributes, T = Time stamps. More in documentation.
+:: /XO			 Excludes older files.
+:: /dcopy:t		 Depcifies what to copy in directories.  T = Time stamps. More in documentation.
+:: /log:<logfile> Writes the status output to the log file (overwrites the existing log file).
+:: /nfl			 Specifies that file names are not to be logged.
+:: /ndl			 Specifies that directory names are not to be logged.		  	 
 
-# Desktop
+:: Desktop
 set hh=%time:~-11,2%
  set /a hh=%hh%+100
  set hh=%hh:~1%
@@ -19,7 +19,7 @@ set hh=%time:~-11,2%
 
 robocopy J:\Users\Kalle\desktop C:\Users\Aaron\desktop /E /W:0 /R:0 /copy:dat /XO /dcopy:t /log:C:\inky\logs\desktop_log_%dateseed%.txt /nfl /ndl
 
-# Documents
+:: Documents
 set hh=%time:~-11,2%
  set /a hh=%hh%+100
  set hh=%hh:~1%
@@ -27,7 +27,7 @@ set hh=%time:~-11,2%
 
 robocopy J:\Users\Kalle\documents C:\Users\Aaron\documents /E /W:0 /R:0 /copy:dat /XO /dcopy:t /log:C:\inky\logs\documents_log_%dateseed%.txt /nfl /ndl
 
-# Downloads
+:: Downloads
 set hh=%time:~-11,2%
  set /a hh=%hh%+100
  set hh=%hh:~1%
@@ -35,7 +35,7 @@ set hh=%time:~-11,2%
 
 robocopy J:\Users\Kalle\downloads C:\Users\Aaron\downloads /E /W:0 /R:0 /copy:dat /XO /dcopy:t /log:C:\inky\logs\downloads_log_%dateseed%.txt /nfl /ndl
 
-# Music
+:: Music
 set hh=%time:~-11,2%
  set /a hh=%hh%+100
  set hh=%hh:~1%
@@ -43,7 +43,7 @@ set hh=%time:~-11,2%
 
 robocopy J:\Users\Kalle\music C:\Users\Aaron\music /E /W:0 /R:0 /copy:dat /XO /dcopy:t /log:C:\inky\logs\music_log_%dateseed%.txt /nfl /ndl
 
-# Pictures
+:: Pictures
 set hh=%time:~-11,2%
  set /a hh=%hh%+100
  set hh=%hh:~1%
@@ -51,7 +51,7 @@ set hh=%time:~-11,2%
 
 robocopy J:\Users\Kalle\pictures C:\Users\Aaron\pictures /E /W:0 /R:0 /copy:dat /XO /dcopy:t /log:C:\inky\logs\pictures_log_%dateseed%.txt /nfl /ndl
 
-# Videos
+:: Videos
 set hh=%time:~-11,2%
  set /a hh=%hh%+100
  set hh=%hh:~1%
@@ -59,7 +59,7 @@ set hh=%time:~-11,2%
 
 robocopy J:\Users\Kalle\videos C:\Users\Aaron\videos /E /W:0 /R:0 /copy:dat /XO /dcopy:t /log:C:\inky\logs\vidoes_log_%dateseed%.txt /nfl /ndl
 
-# Favorites
+:: Favorites
 set hh=%time:~-11,2%
  set /a hh=%hh%+100
  set hh=%hh:~1%
