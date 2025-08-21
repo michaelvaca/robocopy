@@ -1,6 +1,3 @@
-Here’s your full script with the persistent menu loop dropped in (and your requested flags: `/FFT`, `/TEE`, `/R:2 /W:2`), plus the session log + sanity checks intact.
-
-```bat
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
@@ -238,5 +235,4 @@ if !RC! lss 8 (
 )
 echo.
 goto :eof
-```
 
