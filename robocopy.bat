@@ -1,3 +1,6 @@
+Here’s your full script with the persistent menu loop dropped in (and your requested flags: `/FFT`, `/TEE`, `/R:2 /W:2`), plus the session log + sanity checks intact.
+
+```bat
 @echo off
 setlocal EnableExtensions EnableDelayedExpansion
 
@@ -144,35 +147,44 @@ echo Total:      %TOTAL%
 echo Log Directory: %LOG_DIR%
 echo Session Log: %SESSION_LOG%
 echo ===============================================
+echo.
 
-if %FAILED_COUNT% gtr 0 (
-  echo WARNING: Some operations failed. Check log files for details.
-  echo.
-) else (
-  echo All operations completed successfully.
-  echo.
-)
-
-:: Ask user what to do next
+:: ===== Persistent Menu Loop =====
+:MENU
 echo Options:
 echo 1. Close this window
 echo 2. Open log directory
 echo 3. Open session log
 echo.
+set "USER_CHOICE="
 set /p "USER_CHOICE=Choose an option (1-3): "
 
 if "%USER_CHOICE%"=="2" (
   echo Opening log directory...
   start "" "%LOG_DIR%"
+  echo.
+  goto MENU
 ) else if "%USER_CHOICE%"=="3" (
-  echo Opening session log...
-  call :OpenLatestLog
+  if exist "%SESSION_LOG%" (
+    echo Opening session log...
+    start "" notepad "%SESSION_LOG%"
+  ) else (
+    echo No session log found for this run.
+  )
+  echo.
+  goto MENU
+) else if "%USER_CHOICE%"=="1" (
+  goto END
+) else (
+  echo Invalid selection. Please choose 1-3.
+  echo.
+  goto MENU
 )
 
+:END
 echo.
 echo Press any key to exit...
 pause >nul
-
 if %FAILED_COUNT% gtr 0 (
   exit /b 1
 ) else (
@@ -226,13 +238,5 @@ if !RC! lss 8 (
 )
 echo.
 goto :eof
-
-:OpenLatestLog
-if exist "%SESSION_LOG%" (
-  echo Opening: %SESSION_LOG%
-  start "" notepad "%SESSION_LOG%"
-  goto :eof
-)
-echo No session log found for this run.
-goto :eof
+```
 
