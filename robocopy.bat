@@ -1,53 +1,60 @@
 @echo off
-setlocal enabledelayedexpansion
+setlocal EnableExtensions EnableDelayedExpansion
 
 :: Robocopy Backup Script - Enhanced Version
-:: Documentation: https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/robocopy
-:: 
-:: Usage: robocopy.bat [source_user] [dest_user] [/dryrun]
-:: Example: robocopy.bat Kalle Aaron
-:: Example: robocopy.bat Kalle Aaron /dryrun
 
-:: Interactive prompts for drive letters and users
+:: Ensure robocopy exists
+where robocopy >nul 2>&1
+if errorlevel 1 (
+  echo ERROR: robocopy.exe not found. This script requires Robocopy (Windows Vista+).
+  pause
+  exit /b 1
+)
+
 echo ===============================================
 echo Interactive Robocopy Backup Setup
 echo ===============================================
 
 :: Prompt for source drive (required)
 :prompt_source_drive
-set /p "SOURCE_DRIVE=Enter source drive letter (required): "
+set /p "SOURCE_DRIVE=Enter source drive letter (required, e.g. C): "
 if "%SOURCE_DRIVE%"=="" (
-    echo ERROR: Source drive letter is required!
-    goto prompt_source_drive
+  echo ERROR: Source drive letter is required!
+  goto prompt_source_drive
 )
+:: normalize: strip any colon and keep first char
+set "SOURCE_DRIVE=%SOURCE_DRIVE::=%"
+set "SOURCE_DRIVE=%SOURCE_DRIVE:~0,1%"
 
 :: Prompt for source user (required)
 :prompt_source_user
 set /p "SOURCE_USER=Enter source username (required): "
 if "%SOURCE_USER%"=="" (
-    echo ERROR: Source username is required!
-    goto prompt_source_user
+  echo ERROR: Source username is required!
+  goto prompt_source_user
 )
 
 :: Prompt for destination drive (required)
 :prompt_dest_drive
-set /p "DEST_DRIVE=Enter destination drive letter (required): "
+set /p "DEST_DRIVE=Enter destination drive letter (required, e.g. D): "
 if "%DEST_DRIVE%"=="" (
-    echo ERROR: Destination drive letter is required!
-    goto prompt_dest_drive
+  echo ERROR: Destination drive letter is required!
+  goto prompt_dest_drive
 )
+set "DEST_DRIVE=%DEST_DRIVE::=%"
+set "DEST_DRIVE=%DEST_DRIVE:~0,1%"
 
 :: Prompt for destination user (required)
 :prompt_dest_user
 set /p "DEST_USER=Enter destination username (required): "
 if "%DEST_USER%"=="" (
-    echo ERROR: Destination username is required!
-    goto prompt_dest_user
+  echo ERROR: Destination username is required!
+  goto prompt_dest_user
 )
 
 :: Prompt for dry run
 set /p "DRY_RUN_INPUT=Run in dry-run mode? (y/N): "
-if /i "%DRY_RUN_INPUT%"=="y" set "DRY_RUN=/dryrun"
+if /i "%DRY_RUN_INPUT%"=="y"   set "DRY_RUN=/dryrun"
 if /i "%DRY_RUN_INPUT%"=="yes" set "DRY_RUN=/dryrun"
 
 :: Set paths using variables
@@ -61,17 +68,38 @@ set /a FAILED_COUNT=0
 
 :: Create log directory if it doesn't exist
 if not exist "%LOG_DIR%" (
-    echo Creating log directory: %LOG_DIR%
-    mkdir "%LOG_DIR%" 2>nul
-    if !errorlevel! neq 0 (
-        echo ERROR: Could not create log directory: %LOG_DIR%
-        pause
-        exit /b 1
-    )
+  echo Creating log directory: %LOG_DIR%
+  mkdir "%LOG_DIR%" 2>nul
+  if !errorlevel! neq 0 (
+    echo ERROR: Could not create log directory: %LOG_DIR%
+    pause
+    exit /b 1
+  )
 )
 
-:: Generate timestamp
+:: Generate timestamp (locale-agnostic)
 call :GenerateTimestamp TIMESTAMP
+
+:: Create session log path
+set "SESSION_LOG=%LOG_DIR%\session_%TIMESTAMP%.txt"
+
+:: Sanity checks for base paths
+if not exist "%SOURCE_BASE%" (
+  echo ERROR: Source base path not found: "%SOURCE_BASE%"
+  echo Verify the drive letter and username.
+  pause
+  exit /b 1
+)
+
+if not exist "%DEST_BASE%" (
+  echo Creating destination base: "%DEST_BASE%"
+  mkdir "%DEST_BASE%" 2>nul
+  if errorlevel 1 (
+    echo ERROR: Could not create destination base: "%DEST_BASE%"
+    pause
+    exit /b 1
+  )
+)
 
 :: Display configuration
 echo.
@@ -89,15 +117,19 @@ echo ===============================================
 echo.
 
 :: Set robocopy flags
-set "ROBOCOPY_FLAGS=/E /W:0 /R:0 /copy:dat /XO /dcopy:t /MT:8 /nfl /ndl"
+:: ONLY changes requested: /R:2 /W:2, ensure /FFT present, add /TEE
+set "ROBOCOPY_FLAGS=/E /W:2 /R:2 /COPY:DAT /XO /DCOPY:T /MT:8 /NFL /NDL /NJH /NJS /XJ /FFT /TEE"
 if "%DRY_RUN%"=="/dryrun" set "ROBOCOPY_FLAGS=%ROBOCOPY_FLAGS% /L"
 
 :: Define folders to sync
-set "FOLDERS=desktop documents downloads music pictures videos favorites"
+set "FOLDERS=Desktop Documents Downloads Music Pictures Videos Favorites"
+
+:: Optional excludes (leave commented unless needed)
+:: set "EXCLUDES=/XD OneDrive 'OneDrive - *' AppData .git /XF Thumbs.db desktop.ini 'NTUSER.DAT*'"
 
 :: Process each folder
 for %%f in (%FOLDERS%) do (
-    call :SyncFolder "%%f" "%SOURCE_BASE%\%%f" "%DEST_BASE%\%%f" "%LOG_DIR%\%%f_log_%TIMESTAMP%.txt"
+  call :SyncFolder "%%f" "%SOURCE_BASE%\%%f" "%DEST_BASE%\%%f" "%LOG_DIR%\%%f_log_%TIMESTAMP%.txt"
 )
 
 :: Display summary
@@ -106,28 +138,54 @@ echo ===============================================
 echo Backup Summary
 echo ===============================================
 echo Successful: %SUCCESS_COUNT%
-echo Failed: %FAILED_COUNT%
-echo Total: %/a SUCCESS_COUNT+FAILED_COUNT%
+echo Failed:     %FAILED_COUNT%
+set /a TOTAL=SUCCESS_COUNT+FAILED_COUNT
+echo Total:      %TOTAL%
+echo Log Directory: %LOG_DIR%
+echo Session Log: %SESSION_LOG%
 echo ===============================================
-echo.
 
 if %FAILED_COUNT% gtr 0 (
-    echo WARNING: Some operations failed. Check log files for details.
-    exit /b 1
+  echo WARNING: Some operations failed. Check log files for details.
+  echo.
 ) else (
-    echo All operations completed successfully.
-    exit /b 0
+  echo All operations completed successfully.
+  echo.
 )
 
-:: Function to generate timestamp
+:: Ask user what to do next
+echo Options:
+echo 1. Close this window
+echo 2. Open log directory
+echo 3. Open session log
+echo.
+set /p "USER_CHOICE=Choose an option (1-3): "
+
+if "%USER_CHOICE%"=="2" (
+  echo Opening log directory...
+  start "" "%LOG_DIR%"
+) else if "%USER_CHOICE%"=="3" (
+  echo Opening session log...
+  call :OpenLatestLog
+)
+
+echo.
+echo Press any key to exit...
+pause >nul
+
+if %FAILED_COUNT% gtr 0 (
+  exit /b 1
+) else (
+  exit /b 0
+)
+
+:: -------- Functions --------
+
 :GenerateTimestamp
-set hh=%time:~-11,2%
-set /a hh=%hh%+100
-set hh=%hh:~1%
-set "%~1=%date:~10,4%_%date:~4,2%_%date:~7,2%_%hh%_%time:~3,2%_%time:~6,2%"
+:: Robust, locale-independent timestamp via PowerShell
+for /f %%A in ('powershell -NoProfile -Command "Get-Date -Format yyyy_MM_dd_HH_mm_ss"') do set "%~1=%%A"
 goto :eof
 
-:: Function to sync a folder
 :SyncFolder
 set "FOLDER_NAME=%~1"
 set "SOURCE_PATH=%~2"
@@ -138,16 +196,16 @@ echo Processing %FOLDER_NAME%...
 
 :: Check if source directory exists
 if not exist "%SOURCE_PATH%" (
-    echo   WARNING: Source directory does not exist: %SOURCE_PATH%
-    echo   Skipping %FOLDER_NAME%
-    set /a FAILED_COUNT+=1
-    goto :eof
+  echo   WARNING: Source directory does not exist: %SOURCE_PATH%
+  echo   Skipping %FOLDER_NAME%
+  set /a FAILED_COUNT+=1
+  goto :eof
 )
 
 :: Create destination directory if it doesn't exist
 if not exist "%DEST_PATH%" (
-    echo   Creating destination directory: %DEST_PATH%
-    mkdir "%DEST_PATH%" 2>nul
+  echo   Creating destination directory: %DEST_PATH%
+  mkdir "%DEST_PATH%" 2>nul
 )
 
 :: Run robocopy
@@ -155,15 +213,26 @@ echo   Source: %SOURCE_PATH%
 echo   Destination: %DEST_PATH%
 echo   Log: %LOG_FILE%
 
-robocopy "%SOURCE_PATH%" "%DEST_PATH%" %ROBOCOPY_FLAGS% /log:"%LOG_FILE%"
+robocopy "%SOURCE_PATH%" "%DEST_PATH%" %ROBOCOPY_FLAGS% /LOG:"%LOG_FILE%" /LOG+:"%SESSION_LOG%" %EXCLUDES%
 
 :: Check result (robocopy exit codes: 0-7 are success, 8+ are errors)
-if !errorlevel! lss 8 (
-    echo   SUCCESS: %FOLDER_NAME% completed successfully
-    set /a SUCCESS_COUNT+=1
+set "RC=!errorlevel!"
+if !RC! lss 8 (
+  echo   SUCCESS: %FOLDER_NAME% completed successfully (rc=!RC!)
+  set /a SUCCESS_COUNT+=1
 ) else (
-    echo   ERROR: %FOLDER_NAME% failed with exit code !errorlevel!
-    set /a FAILED_COUNT+=1
+  echo   ERROR: %FOLDER_NAME% failed with exit code !RC!
+  set /a FAILED_COUNT+=1
 )
 echo.
 goto :eof
+
+:OpenLatestLog
+if exist "%SESSION_LOG%" (
+  echo Opening: %SESSION_LOG%
+  start "" notepad "%SESSION_LOG%"
+  goto :eof
+)
+echo No session log found for this run.
+goto :eof
+
