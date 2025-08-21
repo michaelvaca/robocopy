@@ -161,7 +161,8 @@ if "%USER_CHOICE%"=="2" (
   start "" "%LOG_DIR%"
   echo.
   goto MENU
-) else if "%USER_CHOICE%"=="3" (
+)
+if "%USER_CHOICE%"=="3" (
   if exist "%SESSION_LOG%" (
     echo Opening session log...
     start "" notepad "%SESSION_LOG%"
@@ -170,13 +171,13 @@ if "%USER_CHOICE%"=="2" (
   )
   echo.
   goto MENU
-) else if "%USER_CHOICE%"=="1" (
-  goto END
-) else (
-  echo Invalid selection. Please choose 1-3.
-  echo.
-  goto MENU
 )
+if "%USER_CHOICE%"=="1" (
+  goto END
+)
+echo Invalid selection. Please choose 1-3.
+echo.
+goto MENU
 
 :END
 echo.
